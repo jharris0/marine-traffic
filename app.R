@@ -58,13 +58,10 @@ server <- function(input, output, session) {
   output$selectShipName <- renderUI({
     dropdown_input(
       input_id = "ship_name",
-      choices = shipsFilteredNames()
+      choices = sort(shipsFilteredNames()),
+      type = "search selection"
     )
   })
-  
-  #output$selected_letter1 <- renderText(paste(nrow(shipsFilteredNames()), collapse = ", "))
-  
-  #output$selected_letter2 <- renderText(paste(nrow(shipsFiltered()), collapse = ", "))
   
   output$shipmap <- renderLeaflet({
     leaflet() %>%
@@ -107,17 +104,6 @@ server <- function(input, output, session) {
         )
     }
   )
-  
-
-  
-  # observeEvent(input$ship_type, {
-  #   update_dropdown_input(session, "simple_dropdown", value = "D")
-  # })
-  # 
-  # observeEvent(input$ship_name, {
-  #   update_dropdown_input(session, "simple_dropdown", choices = LETTERS, value = input$simple_dropdown)
-  # })
-
 }
 
 shinyApp(ui, server)
