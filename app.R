@@ -1,6 +1,7 @@
 library(shiny)
 library(shiny.semantic)
 library(leaflet)
+library(readr)
 
 ships <- read_csv("data/ships_processed.csv")
 
