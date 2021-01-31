@@ -48,29 +48,34 @@ server <- function(input, output, session) {
       filter(shipname == input$ship_name)
   })
   
+  shipsFilteredNames <- reactive({
+    req(input$ship_type)
+    ships %>%
+      filter(ship_type == input$ship_type) %>%
+      pull(shipname)
+  })
+  
   output$selectShipName <- renderUI({
-    choice_shipname <- reactive({
-      ships %>% 
-        filter(ship_type == input$ship_type) %>% 
-        pull(shipname) %>%
-        as.character()
-    })
     dropdown_input(
       input_id = "ship_name",
-      choices = choice_shipname()
+      choices = shipsFilteredNames()
     )
   })
   
-  #selectShipNameServer("selectShipName2") # label?
+  #output$selected_letter1 <- renderText(paste(nrow(shipsFilteredNames()), collapse = ", "))
   
-  output$selected_letter1 <- renderText(paste(input$ship_type, collapse = ", "))
-  
-  output$selected_letter2 <- renderText(paste(input$ship_name, collapse = ", "))
+  #output$selected_letter2 <- renderText(paste(nrow(shipsFiltered()), collapse = ", "))
   
   output$shipmap <- renderLeaflet({
     leaflet() %>%
       addProviderTiles(providers$Stamen.TonerLite,
                        options = providerTileOptions(noWrap = TRUE)
+      ) %>%
+      fitBounds(
+        lng1 = 11,
+        lat1 = 54,
+        lng2 = 31,
+        lat2 = 60
       )
   })
   
@@ -80,12 +85,30 @@ server <- function(input, output, session) {
     },
     handlerExpr = {
       leafletProxy("shipmap", data = shipsFiltered()) %>%
-        addMarkers(lng = ~lon,
-                   lat = ~lat,
-                   label = ~shipname,
-                   popup = ~port)
+        clearShapes() %>%
+        addPolylines(lng = ~ c(prev_lon, lon),
+                     lat = ~ c(prev_lat, lat),
+                     color = 'blue',
+                     weight = 8)
     }
   )
+  
+  observeEvent(
+    eventExpr = {
+      input$ship_name
+    },
+    handlerExpr = {
+      leafletProxy("shipmap", data = shipsFiltered()) %>%
+        fitBounds(
+          lng1 = ~lon - 0.5,
+          lat1 = ~lat - 0.5,
+          lng2 = ~lon + 0.5,
+          lat2 = ~lat + 0.5
+        )
+    }
+  )
+  
+
   
   # observeEvent(input$ship_type, {
   #   update_dropdown_input(session, "simple_dropdown", value = "D")
