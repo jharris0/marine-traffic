@@ -1,7 +1,6 @@
 library(shiny)
 library(shiny.semantic)
 library(leaflet)
-library(readr)
 
 ships <- read_csv("data/ships_processed.csv")
 
@@ -22,7 +21,7 @@ ui <- semanticPage(
       ),
       div(class = "two column row",
           div(class = "column",
-              selectShipTypeUI("selectShipType") # what to put in this label?
+              uiOutput("selectShipType") # what to put in this label?
           ),
           div(class = "column",
               uiOutput("selectShipName") # what to put in this label?
@@ -41,6 +40,8 @@ ui <- semanticPage(
 
 server <- function(input, output, session) {
   
+  # ships <- reactive(read_csv("data/ships_processed.csv"))
+  
   shipsFiltered <- reactive({
     req(input$ship_name)
     req(input$ship_type)
@@ -54,6 +55,13 @@ server <- function(input, output, session) {
     ships %>%
       filter(ship_type == input$ship_type) %>%
       pull(shipname)
+  })
+  
+  output$selectShipType <- renderUI({
+    dropdown_input(
+      input_id = "ship_type",
+      choices = sort(unique(ships$ship_type))
+    )
   })
   
   output$selectShipName <- renderUI({
