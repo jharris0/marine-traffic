@@ -1,5 +1,6 @@
 library(shiny)
 library(shiny.semantic)
+library(readr)
 library(leaflet)
 
 ships <- read_csv("data/ships_processed.csv")
@@ -8,12 +9,10 @@ ui <- semanticPage(
   title = "Marine Traffic Analytics",
   div(class = "ui grid",
       div(class = "one column row",
-          div(class = "ui raised segment",
-              style = "margin-top: -15px; padding-top: 18px;",
-              h1(class = "ui header",
-                 icon("ship"),
-                 div(class = "content", "Marine Traffic Analytics")
-              )
+          style = "margin-top: 18px; margin-left: 20px;",
+          h1(class = "ui header",
+             icon("ship"),
+             div(class = "content", "Marine Traffic Analytics")
           )
       ),
       div(class = "one column row",
@@ -21,35 +20,24 @@ ui <- semanticPage(
       ),
       div(class = "two column row",
           div(class = "column",
-              uiOutput("selectShipType") # what to put in this label?
+              div(class = "ui pointing below label",
+                  p("Select the vessel type")
+              ),
+              uiOutput("selectShipType")
           ),
           div(class = "column",
-              uiOutput("selectShipName") # what to put in this label?
+              uiOutput("selectShipNameLabel"),
+              uiOutput("selectShipName")
           )
       ),
-      div(class = "two column row",
-          div(class = "column",
-              textOutput("selected_letter1"),
-          ),
-          div(class = "column",
-              textOutput("selected_letter2")
-          )
+      div(class = "one column row",
+          uiOutput("distanceTraveled")
       )
   )
 )
 
 server <- function(input, output, session) {
-  
-  # ships <- reactive(read_csv("data/ships_processed.csv"))
-  
-  shipsFiltered <- reactive({
-    req(input$ship_name)
-    req(input$ship_type)
-    ships %>% 
-      filter(ship_type == input$ship_type) %>%
-      filter(shipname == input$ship_name)
-  })
-  
+
   shipsFilteredNames <- reactive({
     req(input$ship_type)
     ships %>%
@@ -57,10 +45,25 @@ server <- function(input, output, session) {
       pull(shipname)
   })
   
+  shipsFiltered <- reactive({
+    req(input$ship_type)
+    req(input$ship_name)
+    ships %>% 
+      filter(ship_type == input$ship_type) %>%
+      filter(shipname == input$ship_name)
+  })
+  
   output$selectShipType <- renderUI({
     dropdown_input(
       input_id = "ship_type",
       choices = sort(unique(ships$ship_type))
+    )
+  })
+  
+  output$selectShipNameLabel <- renderUI({
+    req(input$ship_type)
+    div(class = "ui pointing below label",
+        p("Select or type the vessel name")
     )
   })
   
@@ -74,15 +77,27 @@ server <- function(input, output, session) {
   
   output$shipmap <- renderLeaflet({
     leaflet() %>%
-      addProviderTiles(providers$Stamen.TonerLite,
-                       options = providerTileOptions(noWrap = TRUE)
-      ) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
       fitBounds(
         lng1 = 11,
         lat1 = 54,
         lng2 = 31,
         lat2 = 60
       )
+  })
+  
+  output$distanceTraveled <- renderUI({
+    card(style = "margin-left: 15px;",
+         div(class = "content",
+             div(class = "header",
+                 shipsFiltered()$shipname),
+             div(class = "meta",
+                 paste("Vessel type:", shipsFiltered()$ship_type)
+             ),
+             div(class = "description",
+                 paste("Distance traveled:", round(shipsFiltered()$dist), "meters"))
+         )
+    )
   })
   
   observeEvent(
