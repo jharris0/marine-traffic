@@ -89,10 +89,10 @@ server <- function(input, output, session) {
     handlerExpr = {
       leafletProxy("shipmap", data = shipsFiltered()) %>%
         fitBounds(
-          lng1 = ~lon - 0.2,
-          lat1 = ~lat - 0.2,
-          lng2 = ~lon + 0.2,
-          lat2 = ~lat + 0.2
+          lng1 = ~lon - 0.4,
+          lat1 = ~lat - 0.4,
+          lng2 = ~lon + 0.4,
+          lat2 = ~lat + 0.4
         )
     }
   )
