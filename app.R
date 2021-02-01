@@ -1,9 +1,9 @@
 library(shiny)
 library(shiny.semantic)
-library(readr)
+library(dplyr)
 library(leaflet)
 
-ships <- read_csv("data/ships_processed.csv")
+source("global.R")
 
 ui <- semanticPage(
   title = "Marine Traffic Analytics",
@@ -37,6 +37,8 @@ ui <- semanticPage(
 )
 
 server <- function(input, output, session) {
+  
+  # reactive data objects
 
   shipsFilteredNames <- reactive({
     req(input$ship_type)
@@ -53,27 +55,7 @@ server <- function(input, output, session) {
       filter(shipname == input$ship_name)
   })
   
-  output$selectShipType <- renderUI({
-    dropdown_input(
-      input_id = "ship_type",
-      choices = sort(unique(ships$ship_type))
-    )
-  })
-  
-  output$selectShipNameLabel <- renderUI({
-    req(input$ship_type)
-    div(class = "ui pointing below label",
-        p("Select or type the vessel name")
-    )
-  })
-  
-  output$selectShipName <- renderUI({
-    dropdown_input(
-      input_id = "ship_name",
-      choices = sort(shipsFilteredNames()),
-      type = "search selection"
-    )
-  })
+  # UI output: map
   
   output$shipmap <- renderLeaflet({
     leaflet() %>%
@@ -84,20 +66,6 @@ server <- function(input, output, session) {
         lng2 = 31,
         lat2 = 60
       )
-  })
-  
-  output$distanceTraveled <- renderUI({
-    card(style = "margin-left: 15px;",
-         div(class = "content",
-             div(class = "header",
-                 shipsFiltered()$shipname),
-             div(class = "meta",
-                 paste("Vessel type:", shipsFiltered()$ship_type)
-             ),
-             div(class = "description",
-                 paste("Distance traveled:", round(shipsFiltered()$dist), "meters"))
-         )
-    )
   })
   
   observeEvent(
@@ -121,13 +89,53 @@ server <- function(input, output, session) {
     handlerExpr = {
       leafletProxy("shipmap", data = shipsFiltered()) %>%
         fitBounds(
-          lng1 = ~lon - 0.5,
-          lat1 = ~lat - 0.5,
-          lng2 = ~lon + 0.5,
-          lat2 = ~lat + 0.5
+          lng1 = ~lon - 0.2,
+          lat1 = ~lat - 0.2,
+          lng2 = ~lon + 0.2,
+          lat2 = ~lat + 0.2
         )
     }
   )
+  
+  # UI output: input elements
+  
+  output$selectShipType <- renderUI({
+    dropdown_input(
+      input_id = "ship_type",
+      choices = sort(unique(ships$ship_type))
+    )
+  })
+  
+  output$selectShipNameLabel <- renderUI({
+    req(input$ship_type)
+    div(class = "ui pointing below label",
+        p("Select or type the vessel name")
+    )
+  })
+  
+  output$selectShipName <- renderUI({
+    dropdown_input(
+      input_id = "ship_name",
+      choices = sort(shipsFilteredNames()),
+      type = "search selection"
+    )
+  })
+  
+  # UI output: ship info card
+  
+  output$distanceTraveled <- renderUI({
+    card(style = "margin-left: 15px;",
+         div(class = "content",
+             div(class = "header",
+                 shipsFiltered()$shipname),
+             div(class = "meta",
+                 paste("Vessel type:", shipsFiltered()$ship_type)
+             ),
+             div(class = "description",
+                 paste("Distance traveled:", round(shipsFiltered()$dist), "meters"))
+         )
+    )
+  })
 }
 
 shinyApp(ui, server)
