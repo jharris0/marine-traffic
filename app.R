@@ -2,6 +2,7 @@ library(shiny)
 library(shiny.semantic)
 library(dplyr)
 library(leaflet)
+library(lubridate)
 
 source("global.R")
 
@@ -132,7 +133,9 @@ server <- function(input, output, session) {
                  paste("Vessel type:", shipsFiltered()$ship_type)
              ),
              div(class = "description",
-                 paste("Distance traveled:", round(shipsFiltered()$dist), "meters"))
+                 p(paste("Distance traveled:", round(shipsFiltered()$dist), "meters")),
+                 p(paste("Time interval:", round(time_length(interval(shipsFiltered()$prev_datetime, shipsFiltered()$datetime), unit = "minute")), "minutes"))
+             )
          )
     )
   })
