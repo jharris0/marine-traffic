@@ -9,7 +9,7 @@ ships_raw <- read_csv("data/ships.csv") %>% clean_names()
 
 ships_dt <- lazy_dt(ships_raw) %>%
   group_by(shipname, port) %>%
-  arrange(datetime, .by_group = T) %>%
+  arrange(datetime, .by_group = TRUE) %>%
   mutate(long_diff = lon - lag(lon),
          lat_diff = lat - lag(lat),
          prev_lon = lag(lon),
@@ -19,7 +19,6 @@ ships_dt <- lazy_dt(ships_raw) %>%
 
 ships_final <- ships_dt %>%
   drop_na(lat_diff, long_diff) %>%
-  # filter(lat_diff !=0 & long_diff !=0) %>% # faster but excludes ships that don't move
   mutate(dist = distCosine(cbind(lon,lat), cbind(prev_lon,prev_lat))) %>%
   group_by(shipname) %>% # remove port grouping
   arrange(desc(dist), desc(datetime)) %>%
